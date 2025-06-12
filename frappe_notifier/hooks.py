@@ -178,7 +178,9 @@ app_license = "mit"
 # 	"frappe.desk.doctype.event.event.get_events": "frappe_notifier.event.get_events"
 # }
 override_whitelisted_methods = {
-	'notification_relay.api.get_config': 'frappe_notifier.api.get_config.get_config'
+	'notification_relay.api.get_config': 'frappe_notifier.api.get_config.get_config',
+    'notification_relay.api.token.add': 'frappe_notifier.api.token.add',
+    'notification_relay.api.token.delete': 'frappe_notifier.api.token.remove'
 }
 #
 # each overriding function accepts a `data` argument;

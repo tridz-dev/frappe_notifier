@@ -2,7 +2,7 @@ import frappe
 from werkzeug.wrappers import Response
 import json
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(methods=["GET"],allow_guest=True)
 def get_config():
     vapid_key=frappe.db.get_single_value("Frappe Notifier Settings","vapid_public_key");
     firebase_config=frappe.db.get_single_value("Frappe Notifier Settings","firebase_config");
