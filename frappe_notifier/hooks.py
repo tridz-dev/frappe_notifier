@@ -177,6 +177,9 @@ app_license = "mit"
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "frappe_notifier.event.get_events"
 # }
+override_whitelisted_methods = {
+	'notification_relay.api.get_config': 'frappe_notifier.api.get_config.get_config'
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
