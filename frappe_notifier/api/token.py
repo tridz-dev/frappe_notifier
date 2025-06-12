@@ -2,7 +2,6 @@ import frappe
 
 @frappe.whitelist()
 def add(project_name,site_name,user_id,fcm_token):
-    token = frappe.get_request_header("auth")
     token_doc=frappe.new_doc("FN User Device Token")
     token_doc.project_name=project_name
     token_doc.site_name=site_name
