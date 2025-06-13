@@ -84,6 +84,7 @@ app_license = "mit"
 
 # before_install = "frappe_notifier.install.before_install"
 # after_install = "frappe_notifier.install.after_install"
+after_install = "frappe_notifier.setup.setup_users"
 
 # Uninstallation
 # ------------
