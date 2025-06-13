@@ -2,11 +2,11 @@ import frappe
 from werkzeug.wrappers import Response
 import json
 
-USER_TOKEN_DOCTYPE="Frappe Notifier Settings"
+SETTINGS_DOCTYPE="Frappe Notifier Settings"
 @frappe.whitelist(methods=["GET"],allow_guest=True)
 def get_config():
-    vapid_key=frappe.db.get_single_value(USER_TOKEN_DOCTYPE,"vapid_public_key");
-    firebase_config_json=frappe.db.get_single_value(USER_TOKEN_DOCTYPE,"firebase_config");
+    vapid_key=frappe.db.get_single_value(SETTINGS_DOCTYPE,"vapid_public_key");
+    firebase_config_json=frappe.db.get_single_value(SETTINGS_DOCTYPE,"firebase_config");
 
     firebase_config=frappe.parse_json(firebase_config_json)
 

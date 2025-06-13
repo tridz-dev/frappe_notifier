@@ -2,6 +2,10 @@
 
 Push Notifications setup through Frappe Relay server
 
+## REQUIRED 
+https://cloud.google.com/docs/authentication/provide-credentials-adc#how-to
+
+
 ### Installation
 
 You can install this app using the [bench](https://github.com/frappe/bench) CLI:
