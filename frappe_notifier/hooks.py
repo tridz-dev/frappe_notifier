@@ -261,6 +261,20 @@ fixtures = [
                 ]
             ]
         ]
+    },
+    {
+        "doctype":"Custom DocPerm",
+        "filters":[
+            [
+                "name",
+                "in",
+                [
+                    "hc73e5pi55",
+                    "hc75io0kg9",
+                    "b4hovd1ik7"
+                ]
+            ]
+        ]
     }
 ]
 
