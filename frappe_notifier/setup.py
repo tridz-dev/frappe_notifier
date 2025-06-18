@@ -46,7 +46,6 @@ def setup_users():
                 settings = frappe.get_doc("Push Notification Settings")
                 settings.api_key = api_key
                 settings.api_secret = api_secret
-                settings.enable_push_notification_relay=1
                 settings.save(ignore_permissions=True)
                 
             frappe.db.commit()
