@@ -72,17 +72,17 @@ Add the hostname to the domains array in your `site_config.json`:
 
 ### 4. Push Notification Settings Verification
 
-After installation, verify the "Push Notification Settings":
+After installation:
 
 1. Navigate to **Setup > Push Notification Settings**
-2. Ensure "Enable Push Notifications" is checked
+2. Check "Enable Push Notifications"
 3. Verify that API Key and API Secret are generated
 4. If API Key/Secret are missing:
    - Check if "Notification Manager" user exists
    - If not, create the "Notification Manager" user
    - Generate API key and secret for this user
 
-### 5. Firebase Configuration in Frappe Notifier Settings
+### 5. Firebase Configuration in "Frappe Notifier Settings"
 
 Add your Firebase project values to the Frappe Notifier Settings doctype:
 
