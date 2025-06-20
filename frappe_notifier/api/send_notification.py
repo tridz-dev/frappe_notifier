@@ -175,8 +175,10 @@ def user(project_name: str, site_name: str, user_id: str, title: str, body: str,
         validate_notification_data(data_dict)
         
         # Normalize URLs
-        data_dict["base_url"] = normalize_url_to_https(data_dict["base_url"])
-        data_dict["click_action"] = normalize_url_to_https(data_dict["click_action"])
+        if data_dict.get("base_url"):
+            data_dict["base_url"] = normalize_url_to_https(data_dict["base_url"])
+        if data_dict.get("click_action"):
+            data_dict["click_action"] = normalize_url_to_https(data_dict["click_action"])
 
         tokens = user_tokens(project_name=project_name, site_name=site_name, user_id=user_id)
         if not tokens:
