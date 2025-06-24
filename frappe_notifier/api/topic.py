@@ -60,20 +60,16 @@ def subscribe(user_id, topic_name):
         initialize_firebase_app()
         topic_name=normalize_topic_name(topic_name)
         add(topic_name) # Ensure topic exists
-        frappe.log_error("hi here")
         # Check if user is already marked as subscribed in the database
         topic_doc_name = frappe.db.get_value("FN Notification Topic", {"topic_name": topic_name})
         if frappe.db.exists("FN Notification Topic User", {"parent": topic_doc_name, "user_id": user_id}):
-            frappe.log_error("is this true")
             return {"success": True, "message": "User already subscribed to this topic."}
 
         # Get user's FCM tokens
         tokens = get_user_tokens(user_id)
-        frappe.log_error("tokens",tokens)
         if not tokens:
             return {"success": False, "message": f"No device tokens found for user {user_id}."}
 
-        frappe.log_error("--------------tokens-----------------------",topic_name)
         # Subscribe tokens to the Firebase topic
         response = messaging.subscribe_to_topic(tokens, topic_name)
         if response.failure_count > 0:
@@ -102,7 +98,6 @@ def unsubscribe(user_id, topic_name):
 
         topic_doc_name = frappe.db.get_value("FN Notification Topic", {"topic_name": topic_name})
         
-        frappe.log_error("hihihih",topic_name)
         if not topic_doc_name or not frappe.db.exists("FN Notification Topic User", {"parent": topic_doc_name, "user_id": user_id}):
             return {"success": True, "message": "User is not subscribed to this topic."}
 
