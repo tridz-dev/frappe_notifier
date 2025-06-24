@@ -183,7 +183,9 @@ override_whitelisted_methods = {
     'notification_relay.api.token.add': 'frappe_notifier.api.token.add',
     'notification_relay.api.token.delete': 'frappe_notifier.api.token.remove',
     'notification_relay.api.send_notification.user': 'frappe_notifier.api.send_notification.user',
-    'notification_relay.api.send_notification.topic': 'frappe_notifier.api.send_notification.topic'
+    'notification_relay.api.send_notification.topic': 'frappe_notifier.api.send_notification.topic',
+    'notification_relay.api.topic.add':'frappe_notifier.api.topic.add',
+    'notification_relay.api.topic.remove':'frappe_notifier.api.topic.remove'
 }
 #
 # each overriding function accepts a `data` argument;
