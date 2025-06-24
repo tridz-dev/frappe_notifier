@@ -11,5 +11,5 @@ def firebase_api_endpoint(f):
         except Exception as e:
             frappe.log_error(title=f"Firebase API Error in {f.__name__}", message=str(e))
             # Use frappe.get_response to ensure a proper HTTP response is sent
-            return frappe.get_response({"success": False, "message": str(e)}, http_status_code=500)
+            raise e
     return wrapper 
