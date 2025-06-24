@@ -4,6 +4,7 @@ from typing import List, Dict, Any, Optional
 from firebase_admin import messaging, exceptions, _apps, initialize_app
 from frappe_notifier.utils.normalize_to_https import normalize_url_to_https
 from frappe_notifier.utils.normalize_topic_name import normalize_topic_name
+from frappe_notifier.utils.firebase import initialize_firebase_app, get_user_tokens
 
 SETTINGS_DOCTYPE = "Frappe Notifier Settings"
 USER_TOKEN_DOCTYPE = "FN User Device Token"
@@ -53,26 +54,6 @@ def update_notification_log(
     if error_message:
         log.error_message = error_message
     log.save()
-
-def initialize_firebase_app() -> None:
-    """Initialize Firebase app with proper error handling"""
-    try:
-        if not _apps:
-            firebase_config_json = frappe.db.get_single_value(SETTINGS_DOCTYPE, "firebase_config")
-            if not firebase_config_json:
-                raise FirebaseInitializationError("Firebase configuration not found in settings")
-            
-            try:
-                firebase_config = frappe.parse_json(firebase_config_json)
-            except Exception as e:
-                raise FirebaseInitializationError(f"Invalid Firebase configuration JSON: {str(e)}")
-            
-            try:
-                initialize_app(options=firebase_config)
-            except Exception as e:
-                raise FirebaseInitializationError(f"Failed to initialize Firebase app: {str(e)}")
-    except Exception as e:
-        raise FirebaseInitializationError(f"Firebase initialization failed: {str(e)}")
 
 def validate_notification_data(data: Dict[str, Any]) -> None:
     """Validate notification data"""
@@ -188,7 +169,7 @@ def user(project_name: str, site_name: str, user_id: str, title: str, body: str,
         if data_dict.get("click_action"):
             data_dict["click_action"] = normalize_url_to_https(data_dict["click_action"])
 
-        tokens = user_tokens(project_name=project_name, site_name=site_name, user_id=user_id)
+        tokens = get_user_tokens(project_name=project_name, site_name=site_name, user_id=user_id)
         if not tokens:
             error_msg = f"No device tokens found for user {user_id}"
             update_notification_log(log_name, "Failed", error_msg)
@@ -254,21 +235,5 @@ def user(project_name: str, site_name: str, user_id: str, title: str, body: str,
             update_notification_log(log_name, "Failed", str(e))
         raise
 
-def user_tokens(project_name: str, site_name: str, user_id: str) -> List[str]:
-    """Get user tokens with error handling"""
-    try:
-        data = frappe.db.get_all(
-            USER_TOKEN_DOCTYPE,
-            filters={
-                "project_name": project_name,
-                "site_name": site_name,
-                "user_id": user_id
-            },
-            fields=["fcm_token"]
-        )
-        return [item["fcm_token"] for item in data if item.get("fcm_token")]
-    except Exception as e:
-        raise NotificationError(f"Failed to fetch user tokens: {str(e)}")
-    
 
 
