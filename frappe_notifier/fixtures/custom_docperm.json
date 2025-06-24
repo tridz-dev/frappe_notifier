@@ -70,5 +70,29 @@
   "share": 0,
   "submit": 0,
   "write": 0
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 0,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2025-06-24 10:06:24.609510",
+  "name": "0u6la3me1b",
+  "parent": "FN Notification Topic",
+  "permlevel": 0,
+  "print": 0,
+  "read": 1,
+  "report": 0,
+  "role": "FN Notification Manager",
+  "select": 1,
+  "share": 0,
+  "submit": 0,
+  "write": 1
  }
 ]
