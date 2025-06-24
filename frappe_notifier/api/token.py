@@ -33,7 +33,7 @@ def check_topic_and_subscribe(user_id: str, fcm_token: str):
     """
     Checks if the user is already subscribed to topics and subscribes the new token to them.
     """
-    subscribed_topics = frappe.get_all("FN Notification Topic User", {
+    subscribed_topics = frappe.get_all("FN Notification Topic User", filters={
         "user_id": user_id
     }, fields=["parent"])
 
