@@ -6,7 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "topic_name",
-  "table_yzhn"
+  "user_ids"
  ],
  "fields": [
   {
@@ -16,15 +16,16 @@
    "label": "Topic Name"
   },
   {
-   "fieldname": "table_yzhn",
+   "fieldname": "user_ids",
    "fieldtype": "Table",
+   "label": "User ID",
    "options": "FN Notification Topic User"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-06-24 09:50:09.518738",
+ "modified": "2025-06-24 12:01:40.616491",
  "modified_by": "Administrator",
  "module": "Frappe Notifier",
  "name": "FN Notification Topic",
