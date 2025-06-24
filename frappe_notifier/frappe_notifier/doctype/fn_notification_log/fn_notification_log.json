@@ -1,6 +1,5 @@
 {
  "actions": [],
- "allow_rename": 1,
  "creation": "2025-06-12 13:18:48.572476",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -16,6 +15,7 @@
   {
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Status",
    "options": "Pending\nSent\nFailed"
   },
@@ -27,6 +27,7 @@
   {
    "fieldname": "title",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Title"
   },
   {
@@ -49,7 +50,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-06-12 13:21:50.095763",
+ "modified": "2025-06-20 16:46:25.559475",
  "modified_by": "Administrator",
  "module": "Frappe Notifier",
  "name": "FN Notification Log",
@@ -71,5 +72,6 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }

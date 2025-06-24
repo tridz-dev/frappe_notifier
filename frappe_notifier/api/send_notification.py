@@ -3,7 +3,7 @@ import json
 from typing import List, Dict, Any, Optional
 from firebase_admin import messaging, exceptions, _apps, initialize_app
 from frappe_notifier.utils.normalize_to_https import normalize_url_to_https
-
+from frappe_notifier.utils.normalize_topic_name import normalize_topic_name
 
 SETTINGS_DOCTYPE = "Frappe Notifier Settings"
 USER_TOKEN_DOCTYPE = "FN User Device Token"
@@ -91,6 +91,7 @@ def topic(topic_name: str, title: str, body: str, data: str) -> Dict[str, Any]:
         if not all([topic_name, title, body]):
             raise InvalidInputError("topic_name, title, and body are required parameters")
 
+        topic_name=normalize_topic_name(topic_name)
         # Create initial log entry
         log_name = create_notification_log(
             notification_type="topic",
@@ -112,6 +113,13 @@ def topic(topic_name: str, title: str, body: str, data: str) -> Dict[str, Any]:
             raise InvalidInputError(error_msg)
 
         validate_notification_data(data_dict)
+        
+        # Normalize URLs
+        if data_dict.get("base_url"):
+            data_dict["base_url"] = normalize_url_to_https(data_dict["base_url"])
+        if data_dict.get("click_action"):
+            data_dict["click_action"] = normalize_url_to_https(data_dict["click_action"])
+
         notification_icon = data_dict.get("notification_icon", "")
 
         message = messaging.Message(

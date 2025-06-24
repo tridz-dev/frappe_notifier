@@ -1,6 +1,6 @@
 {
  "actions": [],
- "allow_rename": 1,
+ "allow_import": 1,
  "creation": "2025-06-12 13:16:20.854111",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -15,16 +15,19 @@
   {
    "fieldname": "project_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Project Name"
   },
   {
    "fieldname": "site_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Site Name"
   },
   {
    "fieldname": "user_id",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "User ID"
   },
   {
@@ -42,7 +45,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-06-12 13:17:44.967965",
+ "modified": "2025-06-20 16:54:07.028057",
  "modified_by": "Administrator",
  "module": "Frappe Notifier",
  "name": "FN User Device Token",
