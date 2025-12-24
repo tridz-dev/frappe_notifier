@@ -55,7 +55,7 @@ def subscribe(user_id, topic_name):
 
     topic_doc_name = frappe.db.get_value("FN Notification Topic", {"topic_name": topic_name})
     if frappe.db.exists("FN Notification Topic User", {"parent": topic_doc_name, "user_id": user_id}):
-        frappe.log_error("------------user already exists")
+        # frappe.log_error("------------user already exists")
         return {"success": True, "message": "User already subscribed to this topic."}
 
     tokens = get_user_tokens(user_id)
