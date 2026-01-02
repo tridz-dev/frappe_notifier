@@ -5,6 +5,7 @@ from firebase_admin import messaging, exceptions, _apps, initialize_app
 from frappe_notifier.utils.normalize_to_https import normalize_url_to_https
 from frappe_notifier.utils.normalize_topic_name import normalize_topic_name
 from frappe_notifier.utils.firebase import initialize_firebase_app, get_user_tokens
+from frappe_notifier.frappe_notifier.doctype.fn_notification_topic.fn_notification_topic import get_channel_tokens_exclue_sender
 
 SETTINGS_DOCTYPE = "Frappe Notifier Settings"
 USER_TOKEN_DOCTYPE = "FN User Device Token"
@@ -102,29 +103,69 @@ def topic(topic_name: str, title: str, body: str, data: str) -> Dict[str, Any]:
             data_dict["click_action"] = normalize_url_to_https(data_dict["click_action"])
 
         notification_icon = data_dict.get("notification_icon", "")
+        channel_tokens = get_channel_tokens_exclue_sender(topic_name,data_dict.get("from_user"))
+        if not channel_tokens:
+            error_msg = f"No device tokens found for channel {topic_name}"
+            update_notification_log(log_name, "Failed", error_msg)
+            return {"success": False, "message": error_msg, "log_name": log_name}
 
-        message = messaging.Message(
+        message = messaging.MulticastMessage(
             webpush=messaging.WebpushConfig(
                 notification=messaging.WebpushNotification(
                     title=title,
                     body=body,
                     icon=notification_icon,
                 ),
-                fcm_options=messaging.WebpushFCMOptions(
-                    link=data_dict.get("click_action")
-                )
             ),
-            topic=topic_name
+            tokens=channel_tokens
         )
 
         try:
-            response = messaging.send(message)
-            update_notification_log(log_name, "Sent")
-            return {"success": True, "message_id": response, "log_name": log_name}
+            response = messaging.send_each_for_multicast(message)
+            success_count = sum(1 for result in response.responses if result.success)
+            failure_count = len(channel_tokens) - success_count
+            if failure_count > 0:
+                error_msg = f"Some notifications failed. Success: {success_count}, Failures: {failure_count}"
+                update_notification_log(log_name, "Failed", error_msg)
+            else:
+                update_notification_log(log_name, "Sent")
+            return {
+                "success": True,
+                "log_name": log_name
+            }
         except exceptions.FirebaseError as e:
             error_msg = f"Failed to send topic notification: {str(e)}"
             update_notification_log(log_name, "Failed", error_msg)
             raise NotificationError(error_msg)
+
+    except Exception as e:
+        if log_name:
+            update_notification_log(log_name, "Failed", str(e))
+        raise
+
+        # Old code for sending notification to a topic
+        # message = messaging.Message(
+        #     webpush=messaging.WebpushConfig(
+        #         notification=messaging.WebpushNotification(
+        #             title=title,
+        #             body=body,
+        #             icon=notification_icon,
+        #         ),
+        #         fcm_options=messaging.WebpushFCMOptions(
+        #             link=data_dict.get("click_action")
+        #         )
+        #     ),
+        #     topic=topic_name
+        # )
+
+        # try:
+        #     response = messaging.send(message)
+        #     update_notification_log(log_name, "Sent")
+        #     return {"success": True, "message_id": response, "log_name": log_name}
+        # except exceptions.FirebaseError as e:
+        #     error_msg = f"Failed to send topic notification: {str(e)}"
+        #     update_notification_log(log_name, "Failed", error_msg)
+        #     raise NotificationError(error_msg)
 
     except Exception as e:
         if log_name:
