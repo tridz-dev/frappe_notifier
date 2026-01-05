@@ -36,7 +36,7 @@
    "label": "FCM Token"
   },
   {
-   "default": "True",
+   "default": "1",
    "fieldname": "is_active",
    "fieldtype": "Check",
    "label": "Is Active"
@@ -45,7 +45,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-06-20 16:54:07.028057",
+ "modified": "2026-01-05 23:32:39.668175",
  "modified_by": "Administrator",
  "module": "Frappe Notifier",
  "name": "FN User Device Token",

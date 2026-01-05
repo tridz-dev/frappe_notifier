@@ -1,6 +1,8 @@
 import frappe
 from firebase_admin import _apps, initialize_app
 from typing import List
+from frappe_notifier.frappe_notifier.doctype.fn_user_device_token.fn_user_device_token import deactivate_device_token
+import json
 
 SETTINGS_DOCTYPE = "Frappe Notifier Settings"
 USER_TOKEN_DOCTYPE = "FN User Device Token"
@@ -42,7 +44,28 @@ def subscribe_tokens_to_topic(tokens: List[str], topic_name: str):
     response = messaging.subscribe_to_topic(tokens, topic_name)
     if response.failure_count > 0:
         errors = [e.reason for e in response.errors]
-        frappe.log_error(f"Partial failure subscribing to topic {topic_name}", str(errors))
+        errored_index = [e.index for e in response.errors]
+        frappe.log_error(
+            title="FCM Subscribe Debug",
+            message=json.dumps({
+                "success_count": response.success_count,
+                "failure_count": response.failure_count,
+                "errors": errors
+            }, indent=2)
+        )
+        if errors:
+            if errors[0] == "INVALID_ARGUMENT" or errors[0] == "UNREGISTERED":
+                for i in errored_index:
+                    deactivate_device_token(tokens[i])
+            else:
+                frappe.log_error(
+                    title="FCM Subscribe topic error",
+                    message=json.dumps({
+                        "error": error,
+                        "index": errored_index,
+                        "tokens": [tokens[i] for i in errored_index]
+                    }, indent=2)
+                )
         if response.success_count == 0:
             raise Exception(f"Failed to subscribe any device to topic: {topic_name}. Errors: {errors}")
 
