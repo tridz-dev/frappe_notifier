@@ -66,19 +66,19 @@ def validate_notification_data(data: Dict[str, Any]) -> None:
     pass
 
 @frappe.whitelist()
-def topic(topic_name: str, title: str, body: str, data: str) -> Dict[str, Any]:
+def topic(topic_name: str, title: str, body: str | None, data: str) -> Dict[str, Any]:
     """Send notification to a topic"""
     log_name = None
     try:
-        if not all([topic_name, title, body]):
-            raise InvalidInputError("topic_name, title, and body are required parameters")
+        if not all([topic_name, title]):
+            raise InvalidInputError("topic_name and title are required parameters")
 
         topic_name=normalize_topic_name(topic_name)
         # Create initial log entry
         log_name = create_notification_log(
             notification_type="topic",
             title=title,
-            body=body,
+            body=body or "",
             notification_data={
                 "topic_name": topic_name,
                 "data": data
