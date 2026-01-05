@@ -39,7 +39,6 @@ def subscribe_tokens_to_topic(tokens: List[str], topic_name: str):
     """
     if not tokens:
         return
-    
     from firebase_admin import messaging
     response = messaging.subscribe_to_topic(tokens, topic_name)
     if response.failure_count > 0:
@@ -95,7 +94,9 @@ def get_user_tokens(user_id: str, project_name: str = None, site_name: str = Non
         filters["project_name"] = project_name
     if site_name:
         filters["site_name"] = site_name
-
+    
+    # Only get active tokens
+    filters["is_active"] = 1
     try:
         data = frappe.db.get_all(
             USER_TOKEN_DOCTYPE,
