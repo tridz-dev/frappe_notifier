@@ -245,9 +245,23 @@ def user(project_name: str, site_name: str, user_id: str, title: str, body: str,
             response = messaging.send_each_for_multicast(message)
             success_count = sum(1 for result in response.responses if result.success)
             failure_count = len(tokens) - success_count
-            
             if failure_count > 0:
                 error_msg = f"Some notifications failed. Success: {success_count}, Failures: {failure_count}"
+                frappe.log_error(
+                    title="FCM Multicast Debug",
+                    message=json.dumps({
+                        "success_count": response.success_count,
+                        "failure_count": response.failure_count,
+                        "results": [
+                            {
+                                "success": r.success,
+                                "error": str(r.exception) if r.exception else None,
+                                "message_id": r.message_id
+                            }
+                            for r in response.responses
+                        ]
+                    }, indent=2)
+                )
                 update_notification_log(log_name, "Failed", error_msg)
             else:
                 update_notification_log(log_name, "Sent")
