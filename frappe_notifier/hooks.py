@@ -167,6 +167,12 @@ after_install = "frappe_notifier.setup.setup_users"
 # 	],
 # }
 
+scheduler_events = {
+    "daily": [
+        "frappe_notifier.frappe_notifier.doctype.fn_notification_log.fn_notification_log.clear_old_logs"
+    ]
+}
+
 # Testing
 # -------
 
