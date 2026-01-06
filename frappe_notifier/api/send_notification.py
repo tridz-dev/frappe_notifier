@@ -6,6 +6,8 @@ from frappe_notifier.utils.normalize_to_https import normalize_url_to_https
 from frappe_notifier.utils.normalize_topic_name import normalize_topic_name
 from frappe_notifier.utils.firebase import initialize_firebase_app, get_user_tokens
 from frappe_notifier.frappe_notifier.doctype.fn_notification_topic.fn_notification_topic import get_channel_tokens_exclue_sender
+from frappe_notifier.frappe_notifier.doctype.fn_user_device_token.fn_user_device_token import deactivate_device_token
+
 
 SETTINGS_DOCTYPE = "Frappe Notifier Settings"
 USER_TOKEN_DOCTYPE = "FN User Device Token"
@@ -65,6 +67,132 @@ def validate_notification_data(data: Dict[str, Any]) -> None:
     #     raise InvalidInputError(f"Missing required fields in notification data: {', '.join(missing_fields)}")
     pass
 
+def send_notification(
+    tokens: List[str],
+    title: str,
+    body: str | None,
+    notification_icon: str = "",
+    click_action: Optional[str] = None,
+    base_url: Optional[str] = None,
+    deactivate_invalid_tokens: bool = False
+) -> Dict[str, Any]:
+    """
+    Send multicast notification and handle errors.
+    
+    Args:
+        tokens: List of device tokens to send notification to
+        title: Notification title
+        body: Notification body (optional)
+        notification_icon: Icon URL for notification
+        click_action: Optional click action URL
+        base_url: Optional base URL
+        deactivate_invalid_tokens: Whether to deactivate invalid tokens (for user notifications)
+    
+    Returns:
+        Dictionary with success status, counts, and response details
+    """
+    if not tokens:
+        return {
+            "success": False,
+            "success_count": 0,
+            "failure_count": 0,
+            "responses": []
+        }
+    
+    # Build notification data
+    notification_data = {}
+    if base_url:
+        notification_data["base_url"] = base_url
+    if click_action:
+        notification_data["click_action"] = click_action
+    
+    # Build webpush config
+    webpush_notification = messaging.WebpushNotification(
+        title=title,
+        body=body or "",
+        icon=notification_icon,
+    )
+    
+    # Add additional fields for user notifications
+    if click_action or base_url:
+        webpush_notification.badge = ""
+        webpush_notification.data = notification_data
+        webpush_notification.custom_data = notification_data
+    
+    webpush_config = messaging.WebpushConfig(
+        notification=webpush_notification,
+    )
+    
+    # Add FCM options if click_action is provided
+    if click_action:
+        webpush_config.fcm_options = messaging.WebpushFCMOptions(
+            link=click_action
+        )
+    
+    message = messaging.MulticastMessage(
+        webpush=webpush_config,
+        tokens=tokens
+    )
+    
+    try:
+        response = messaging.send_each_for_multicast(message)
+        success_count = sum(1 for result in response.responses if result.success)
+        failure_count = len(tokens) - success_count
+        
+        # Handle invalid tokens if enabled
+        if deactivate_invalid_tokens and failure_count > 0:
+            for token, result in zip(tokens, response.responses):
+                error = str(result.exception) if result.exception else None
+                if not result.success and error:
+                    if (
+                        "NotRegistered" in error or
+                        "Requested entity was not found" in error
+                    ):
+                        deactivate_device_token(token)
+                    else:
+                        frappe.log_error(
+                            title="FCM Multicast Error",
+                            message=json.dumps({
+                                "token": token,
+                                "error": error
+                            }, indent=2)
+                        )
+        
+        # Log detailed debug info for failures (user notifications)
+        if deactivate_invalid_tokens and failure_count > 0:
+            frappe.log_error(
+                title="FCM Multicast Debug",
+                message=json.dumps({
+                    "success_count": response.success_count,
+                    "failure_count": response.failure_count,
+                    "results": [
+                        {
+                            "success": r.success,
+                            "error": str(r.exception) if r.exception else None,
+                            "message_id": r.message_id
+                        }
+                        for r in response.responses
+                    ]
+                }, indent=2)
+            )
+        
+        return {
+            "success": failure_count == 0,
+            "success_count": success_count,
+            "failure_count": failure_count,
+            "responses": [
+                {
+                    "token": token,
+                    "success": result.success,
+                    "error": str(result.exception) if result.exception else None
+                }
+                for token, result in zip(tokens, response.responses)
+            ]
+        }
+    except exceptions.FirebaseError as e:
+        error_msg = f"Failed to send notification: {str(e)}"
+        raise NotificationError(error_msg)
+
 @frappe.whitelist()
 def topic(topic_name: str, title: str, body: str | None, data: str) -> Dict[str, Any]:
     """Send notification to a topic"""
@@ -109,63 +237,26 @@ def topic(topic_name: str, title: str, body: str | None, data: str) -> Dict[str,
             update_notification_log(log_name, "Failed", error_msg)
             return {"success": False, "message": error_msg, "log_name": log_name}
 
-        message = messaging.MulticastMessage(
-            webpush=messaging.WebpushConfig(
-                notification=messaging.WebpushNotification(
-                    title=title,
-                    body=body,
-                    icon=notification_icon,
-                ),
-            ),
-            tokens=channel_tokens
+        response = send_notification(
+            tokens=channel_tokens,
+            title=title,
+            body=body,
+            notification_icon=notification_icon,
+            click_action=None,
+            base_url=None,
+            deactivate_invalid_tokens=True
         )
-
-        try:
-            response = messaging.send_each_for_multicast(message)
-            success_count = sum(1 for result in response.responses if result.success)
-            failure_count = len(channel_tokens) - success_count
-            if failure_count > 0:
-                error_msg = f"Some notifications failed. Success: {success_count}, Failures: {failure_count}"
-                update_notification_log(log_name, "Failed", error_msg)
-            else:
-                update_notification_log(log_name, "Sent")
-            return {
-                "success": True,
-                "log_name": log_name
-            }
-        except exceptions.FirebaseError as e:
-            error_msg = f"Failed to send topic notification: {str(e)}"
+        
+        if response["failure_count"] > 0:
+            error_msg = f"Some notifications failed. Success: {response['success_count']}, Failures: {response['failure_count']}"
             update_notification_log(log_name, "Failed", error_msg)
-            raise NotificationError(error_msg)
-
-    except Exception as e:
-        if log_name:
-            update_notification_log(log_name, "Failed", str(e))
-        raise
-
-        # Old code for sending notification to a topic
-        # message = messaging.Message(
-        #     webpush=messaging.WebpushConfig(
-        #         notification=messaging.WebpushNotification(
-        #             title=title,
-        #             body=body,
-        #             icon=notification_icon,
-        #         ),
-        #         fcm_options=messaging.WebpushFCMOptions(
-        #             link=data_dict.get("click_action")
-        #         )
-        #     ),
-        #     topic=topic_name
-        # )
-
-        # try:
-        #     response = messaging.send(message)
-        #     update_notification_log(log_name, "Sent")
-        #     return {"success": True, "message_id": response, "log_name": log_name}
-        # except exceptions.FirebaseError as e:
-        #     error_msg = f"Failed to send topic notification: {str(e)}"
-        #     update_notification_log(log_name, "Failed", error_msg)
-        #     raise NotificationError(error_msg)
+        else:
+            update_notification_log(log_name, "Sent")
+        
+        return {
+            "success": True,
+            "log_name": log_name
+        }
 
     except Exception as e:
         if log_name:
@@ -218,77 +309,31 @@ def user(project_name: str, site_name: str, user_id: str, title: str, body: str,
 
         notification_icon = data_dict.get("notification_icon", "")
 
-        message = messaging.MulticastMessage(
-            webpush=messaging.WebpushConfig(
-                notification=messaging.WebpushNotification(
-                    title=title,
-                    body=body,
-                    icon=notification_icon,
-                    badge="",
-                    data={
-                        "base_url": data_dict.get("base_url"),
-                        "click_action": data_dict.get("click_action"),
-                    },
-                    custom_data={
-                        "base_url": data_dict.get("base_url"),
-                        "click_action": data_dict.get("click_action"),
-                    }
-                ),
-                fcm_options=messaging.WebpushFCMOptions(
-                    link=data_dict.get("click_action")
-                )
-            ),
-            tokens=tokens
+        response = send_notification(
+            tokens=tokens,
+            title=title,
+            body=body,
+            notification_icon=notification_icon,
+            click_action=data_dict.get("click_action"),
+            base_url=data_dict.get("base_url"),
+            deactivate_invalid_tokens=True
         )
-
-        try:
-            response = messaging.send_each_for_multicast(message)
-            success_count = sum(1 for result in response.responses if result.success)
-            failure_count = len(tokens) - success_count
-            if failure_count > 0:
-                error_msg = f"Some notifications failed. Success: {success_count}, Failures: {failure_count}"
-                frappe.log_error(
-                    title="FCM Multicast Debug",
-                    message=json.dumps({
-                        "success_count": response.success_count,
-                        "failure_count": response.failure_count,
-                        "results": [
-                            {
-                                "success": r.success,
-                                "error": str(r.exception) if r.exception else None,
-                                "message_id": r.message_id
-                            }
-                            for r in response.responses
-                        ]
-                    }, indent=2)
-                )
-                update_notification_log(log_name, "Failed", error_msg)
-            else:
-                update_notification_log(log_name, "Sent")
-            
-            return {
-                "success": True,
-                "success_count": success_count,
-                "failure_count": failure_count,
-                "log_name": log_name,
-                "responses": [
-                    {
-                        "token": token,
-                        "success": result.success,
-                        "error": str(result.exception) if result.exception else None
-                    }
-                    for token, result in zip(tokens, response.responses)
-                ]
-            }
-        except exceptions.FirebaseError as e:
-            error_msg = f"Failed to send user notification: {str(e)}"
+        
+        if response["failure_count"] > 0:
+            error_msg = f"Some notifications failed. Success: {response['success_count']}, Failures: {response['failure_count']}"
             update_notification_log(log_name, "Failed", error_msg)
-            raise NotificationError(error_msg)
+        else:
+            update_notification_log(log_name, "Sent")
+        
+        return {
+            "success": True,
+            "success_count": response["success_count"],
+            "failure_count": response["failure_count"],
+            "log_name": log_name,
+            "responses": response["responses"]
+        }
 
     except Exception as e:
         if log_name:
             update_notification_log(log_name, "Failed", str(e))
         raise
-
-
-
