@@ -6,6 +6,8 @@ from frappe_notifier.utils.normalize_to_https import normalize_url_to_https
 from frappe_notifier.utils.normalize_topic_name import normalize_topic_name
 from frappe_notifier.utils.firebase import initialize_firebase_app, get_user_tokens
 from frappe_notifier.frappe_notifier.doctype.fn_notification_topic.fn_notification_topic import get_channel_tokens_exclue_sender
+from frappe_notifier.frappe_notifier.doctype.fn_user_device_token.fn_user_device_token import deactivate_device_token
+
 
 SETTINGS_DOCTYPE = "Frappe Notifier Settings"
 USER_TOKEN_DOCTYPE = "FN User Device Token"
@@ -263,9 +265,24 @@ def user(project_name: str, site_name: str, user_id: str, title: str, body: str,
                     }, indent=2)
                 )
                 update_notification_log(log_name, "Failed", error_msg)
+                for token, result in zip(tokens, response.responses):
+                    error = str(result.exception) if result.exception else None
+                    if not result.success and error:
+                        if (
+                            "NotRegistered" in error or
+                            "Requested entity was not found" in error
+                        ):
+                            deactivate_device_token(token)
+                        else:
+                            frappe.log_error(
+                                title="FCM Multicast Error",
+                                message=json.dumps({
+                                    "token": token,
+                                    "error": str(result.exception) if result.exception else None
+                                }, indent=2)
+                            )
             else:
                 update_notification_log(log_name, "Sent")
-            
             return {
                 "success": True,
                 "success_count": success_count,
@@ -289,6 +306,3 @@ def user(project_name: str, site_name: str, user_id: str, title: str, body: str,
         if log_name:
             update_notification_log(log_name, "Failed", str(e))
         raise
-
-
-
