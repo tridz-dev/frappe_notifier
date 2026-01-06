@@ -60,7 +60,7 @@ def subscribe_tokens_to_topic(tokens: List[str], topic_name: str):
                 frappe.log_error(
                     title="FCM Subscribe topic error",
                     message=json.dumps({
-                        "error": error,
+                        "error": errors,
                         "index": errored_index,
                         "tokens": [tokens[i] for i in errored_index]
                     }, indent=2)
