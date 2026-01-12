@@ -23,6 +23,7 @@ def get_channel_tokens_exclue_sender(channel_name:str,sender_id:str):
 	channel_tokens = frappe.db.get_all("FN User Device Token",
 		filters={
 			"user_id":["in",channel_users],
+			"is_active":1
 		},
 		pluck="fcm_token"
 	)
