@@ -24,7 +24,8 @@ bench install-app frappe_notifier
 
 1. Generate a `firebase_service_account.json` file from your Firebase project
 2. Place the `firebase_service_account.json` file in your bench directory
-3. Run the initialization script from the bench directory:
+3. Generate Vapid Key [Link](https://stackoverflow.com/questions/54996206/firebase-cloud-messaging-where-to-find-public-vapid-key)
+4. Run the initialization script from the bench directory:
 
 ```bash
 source ./apps/frappe_notifier/init.sh
