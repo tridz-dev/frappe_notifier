@@ -26,7 +26,14 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/frappe_notifier/css/frappe_notifier.css"
-# app_include_js = "/assets/frappe_notifier/js/frappe_notifier.js"
+app_include_js = ["/assets/frappe_notifier/push_bridge.js"]
+
+# Page renderer
+# -------------
+#
+# Serve the Firebase messaging service worker from the origin root at
+# /firebase-messaging-sw.js so that its scope covers the whole site.
+page_renderer = ["frappe_notifier.service_worker.ServiceWorkerRenderer"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/frappe_notifier/css/frappe_notifier.css"
@@ -146,6 +153,12 @@ after_install = "frappe_notifier.setup.setup_users"
 # 	}
 # }
 
+doc_events = {
+    "Notification Log": {
+        "after_insert": "frappe_notifier.controllers.system_notifications.on_insert"
+    }
+}
+
 # Scheduled Tasks
 # ---------------
 
@@ -259,6 +272,8 @@ override_whitelisted_methods = {
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
+
+extend_bootinfo="frappe_notifier.boot.extend_bootinfo"
 
 fixtures = [
     {
