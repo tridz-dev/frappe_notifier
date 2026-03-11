@@ -99,13 +99,22 @@ def send_notification(
             "responses": []
         }
     
-    # Build notification data
     notification_data = {}
     if base_url:
         notification_data["base_url"] = base_url
     if click_action:
         notification_data["click_action"] = click_action
-    
+
+    # FCM data payload - ensures delivery when Android app is in background/killed
+    data_dict = {
+        'title': str(title or ''),
+        'body': str(body or ''),
+    }
+    if click_action:
+        data_dict['click_action'] = click_action
+    if base_url:
+        data_dict['base_url'] = base_url
+
     # Build webpush config
     webpush_notification = messaging.WebpushNotification(
         title=title,
@@ -131,7 +140,10 @@ def send_notification(
     
     message = messaging.MulticastMessage(
         webpush=webpush_config,
-        tokens=tokens
+        tokens=tokens,
+        data=data_dict,
+        # High priority bypasses Android Doze mode for immediate delivery
+        android=messaging.AndroidConfig(priority='high'),
     )
     
     try:
