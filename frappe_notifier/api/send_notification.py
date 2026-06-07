@@ -74,7 +74,8 @@ def send_notification(
     notification_icon: str = "",
     click_action: Optional[str] = None,
     base_url: Optional[str] = None,
-    deactivate_invalid_tokens: bool = False
+    deactivate_invalid_tokens: bool = False,
+    extra_data: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Send multicast notification and handle errors.
@@ -114,6 +115,10 @@ def send_notification(
         data_dict['click_action'] = click_action
     if base_url:
         data_dict['base_url'] = base_url
+    if extra_data:
+        data_dict.update(extra_data)
+    # FCM HTTP v1 requires all data values to be strings
+    data_dict = {k: str(v) for k, v in data_dict.items()}
 
     # Build webpush config
     webpush_notification = messaging.WebpushNotification(
