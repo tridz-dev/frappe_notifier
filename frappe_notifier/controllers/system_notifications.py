@@ -7,6 +7,7 @@ def on_insert(doc, method) -> None:
         queue="short",
         notification_log_name=doc.name,
         now=frappe.flags.in_test,
+        enqueue_after_commit=True,
     )
 
 
